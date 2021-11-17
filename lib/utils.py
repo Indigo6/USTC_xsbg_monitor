@@ -1,3 +1,4 @@
+import argparse
 import logging
 
 
@@ -25,3 +26,14 @@ def create_logger(log_path):
     logging.getLogger('').addHandler(console)
 
     return logger
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Train keypoints network')
+    # general
+    parser.add_argument('--cfg',
+                        help='experiment configure file name',
+                        default='cfg/config.json',
+                        type=str)
+    args = parser.parse_args()
+    return args

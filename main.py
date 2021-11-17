@@ -1,6 +1,8 @@
+# encoding: utf-8
 import json
 import sys
 import time
+from random import uniform
 
 import requests
 import traceback
@@ -8,7 +10,7 @@ import traceback
 from bs4 import BeautifulSoup
 from lib.check_code import Checkcode
 from lib.mail import send_email
-from lib.utils import create_logger
+from lib.utils import create_logger, parse_args
 
 login_asp = "https://yjs.ustc.edu.cn/default_yjsy.asp"
 check_code_asp = 'https://yjs.ustc.edu.cn/checkcode.asp'
@@ -38,7 +40,7 @@ def login():
     login_dict = {
         'userid': userid,
         'userpwd': userpwd,
-        'txt_check': check_code,
+        'txt_check': check_code
     }
     login_result = s.post(login_asp, data=login_dict)
     login_status_code = login_result.status_code
@@ -47,11 +49,12 @@ def login():
 
 
 if __name__ == "__main__":
+    args = parse_args()
     logger = create_logger('log/speech.log')
 
     # read the configuration in the json file
     logger.info("Loading configurations...")
-    with open('cfg/config.json', encoding='utf-8') as f:
+    with open(args.cfg, encoding='utf-8') as f:
         js = json.load(f)
     userid = js['userid']
     userpwd = js['userpwd']
@@ -81,10 +84,22 @@ if __name__ == "__main__":
             selected_names = set()
             now_time = time.asctime( time.localtime(time.time()) )
             logger.info("\n\n\n****** {} ******".format(now_time))
+            failed_num = 0
+            succeed_num = 0
+            doing_num = 0
             for private_speech in private_speeches:
                 selected_name = private_speech.contents[5].contents[1].contents[0].strip()
+                if selected_name in selected_names:
+                    continue
                 selected_names.add(selected_name)
-                logger.info("已选: " + selected_name)
+                if private_speech.contents[19].contents[0] == "不通过":
+                    failed_num += 1
+                elif private_speech.contents[19].contents[0] == "通过":
+                    succeed_num += 1
+                else:
+                    doing_num += 1
+            logger.info("已选 {} 次学术报告, {} 次通过, {} 次未批改, {} 次不通过".format(len(selected_names),
+                                                                       succeed_num, doing_num, failed_num))
 
             for global_speech in global_speeches:
                 global_speech_name = global_speech.contents[5].contents[1].contents[0].strip()
@@ -96,7 +111,8 @@ if __name__ == "__main__":
                     continue
                 logger.info("!*** 需要选课: {} ***!".format(global_speech_name))
                 send_email("!*** 需要选课: {} ***!".format(global_speech_name), mail_server, mail_address, mail_passwd)
-            time.sleep(60)
+            random_sleep = uniform(120, 180)
+            time.sleep(random_sleep)
         except KeyboardInterrupt:
             sys.exit()
         else:
