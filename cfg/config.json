@@ -1,0 +1,14 @@
+{
+    "Comment1":"填写学号姓名",
+    "userid" : "SAxxxxxxxx",
+    "userpwd": "xxxxx",
+    
+    "Comment2": "是否选课，是：true或否：false",
+    "enable.order" : true,
+
+    "Comment3" : "邮箱地址以及密码",
+    "__comment3.1": "qq or ustc email",
+    "mail_server": "ustc",
+    "mail_address" : "xxx@mail.ustc.edu.cn",
+    "mail_passwd" : "xxxxxx"
+}
