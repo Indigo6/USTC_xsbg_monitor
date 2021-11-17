@@ -111,6 +111,10 @@ if __name__ == "__main__":
                     continue
                 logger.info("!*** 需要选课: {} ***!".format(global_speech_name))
                 send_email("!*** 需要选课: {} ***!".format(global_speech_name), mail_server, mail_address, mail_passwd)
+
+                select_form = {'select': int(global_speech.contents[3].contents[0]),
+                               'submit': '选课'}
+                s.post(speech_global_asp, select_form)
             random_sleep = uniform(120, 180)
             time.sleep(random_sleep)
         except KeyboardInterrupt:
