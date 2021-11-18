@@ -48,6 +48,21 @@ def login():
         print("Login succeed!")
 
 
+def check_selected(tried_speech_name):
+    selected_table = s.get(speech_private_asp)
+    selected_table = BeautifulSoup(selected_table.text, 'lxml')
+    selected_speeches = selected_table.find_all('tr', class_="bt06")
+    selected_names = set()
+    for selected_speech in selected_speeches:
+        selected_name = selected_speech.contents[5].contents[1].contents[0].strip()
+        if selected_name in selected_names:
+            continue
+        selected_names.add(selected_name)
+    if tried_speech_name in selected_names:
+        return True
+    return False
+
+
 if __name__ == "__main__":
     args = parse_args()
     logger = create_logger('log/speech.log')
@@ -81,40 +96,42 @@ if __name__ == "__main__":
             private_soup = BeautifulSoup(speech_private_table.text, 'lxml')
             private_speeches = private_soup.find_all('tr', class_="bt06")
 
-            selected_names = set()
+            private_names = set()
             now_time = time.asctime( time.localtime(time.time()) )
             logger.info("\n\n\n****** {} ******".format(now_time))
             failed_num = 0
             succeed_num = 0
             doing_num = 0
             for private_speech in private_speeches:
-                selected_name = private_speech.contents[5].contents[1].contents[0].strip()
-                if selected_name in selected_names:
+                private_name = private_speech.contents[5].contents[1].contents[0].strip()
+                if private_name in private_names:
                     continue
-                selected_names.add(selected_name)
+                private_names.add(private_name)
                 if private_speech.contents[19].contents[0] == "不通过":
                     failed_num += 1
                 elif private_speech.contents[19].contents[0] == "通过":
                     succeed_num += 1
                 else:
                     doing_num += 1
-            logger.info("已选 {} 次学术报告, {} 次通过, {} 次未批改, {} 次不通过".format(len(selected_names),
+            logger.info("已选 {} 次学术报告, {} 次通过, {} 次未批改, {} 次不通过".format(len(private_names),
                                                                        succeed_num, doing_num, failed_num))
 
             for global_speech in global_speeches:
                 global_speech_name = global_speech.contents[5].contents[1].contents[0].strip()
-                if global_speech_name in selected_names:
+                if global_speech_name in private_names:
                     logger.info("无需选课(已选): " + global_speech_name)
                     continue
-                elif "计算机学院研究生学术论坛系列" not in global_speech_name:
-                    logger.info("无需选课(无学分): " + global_speech_name)
-                    continue
+                # elif "计算机学院研究生学术论坛系列" not in global_speech_name:
+                #     logger.info("无需选课(无学分): " + global_speech_name)
+                #     continue
                 logger.info("!*** 需要选课: {} ***!".format(global_speech_name))
                 send_email("!*** 需要选课: {} ***!".format(global_speech_name), mail_server, mail_address, mail_passwd)
 
-                select_form = {'select': int(global_speech.contents[3].contents[0]),
-                               'submit': '选课'}
-                s.post(speech_global_asp, select_form)
+                select_form = {"selectxh": str(global_speech.contents[3].contents[0]),
+                               "select": "true"}
+                select_response = s.post(speech_global_asp, select_form).status_code
+                if select_response == 200 and check_selected(global_speech_name):
+                    send_email("*** O(∩_∩)O~~ 选上报告: {} ***!".format(global_speech_name), mail_server, mail_address, mail_passwd)
             random_sleep = uniform(120, 180)
             time.sleep(random_sleep)
         except KeyboardInterrupt:
