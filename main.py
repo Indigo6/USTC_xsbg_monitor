@@ -2,14 +2,13 @@
 import json
 import sys
 import time
-from random import uniform
-
-import requests
 import traceback
 
 from bs4 import BeautifulSoup
+from random import uniform
 from lib.check_code import Checkcode
 from lib.mail import send_email
+from lib.session import MySession
 from lib.utils import create_logger, parse_args
 
 login_asp = "https://yjs.ustc.edu.cn/default_yjsy.asp"
@@ -27,7 +26,7 @@ default_headers = {
 }
 
 
-def login():
+def login(s):
     # get check code
     login_txt = s.get(login_asp).text
     img = s.get(check_code_asp).content
@@ -81,9 +80,9 @@ if __name__ == "__main__":
 
     # create session
     logger.info("Logging in...")
-    s = requests.Session()
+    s = MySession()
     s.headers.update(default_headers)
-    login()
+    login(s)
 
     while True:
         try:
@@ -121,9 +120,9 @@ if __name__ == "__main__":
                 if global_speech_name in private_names:
                     logger.info("无需选课(已选): " + global_speech_name)
                     continue
-                # elif "计算机学院研究生学术论坛系列" not in global_speech_name:
-                #     logger.info("无需选课(无学分): " + global_speech_name)
-                #     continue
+                elif "计算机学院研究生学术论坛系列" not in global_speech_name:
+                    logger.info("无需选课(无学分): " + global_speech_name)
+                    continue
                 logger.info("!*** 需要选课: {} ***!".format(global_speech_name))
                 send_email("!*** 需要选课: {} ***!".format(global_speech_name), mail_server, mail_address, mail_passwd)
 
@@ -138,5 +137,5 @@ if __name__ == "__main__":
             sys.exit()
         else:
             traceback.print_exc()
-            login()
+            login(s)
             continue
