@@ -120,7 +120,8 @@ if __name__ == "__main__":
                 if global_speech_name in private_names:
                     logger.info("无需选课(已选): " + global_speech_name)
                     continue
-                elif "计算机学院研究生学术论坛系列" not in global_speech_name:
+                elif "计算机学院研究生学术论坛系列" not in global_speech_name and \
+                     "研究生高水平学术报告" not in global_speech_name:
                     logger.info("无需选课(无学分): " + global_speech_name)
                     continue
                 logger.info("!*** 需要选课: {} ***!".format(global_speech_name))
