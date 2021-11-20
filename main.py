@@ -1,9 +1,12 @@
 # encoding: utf-8
 import json
+import ssl
 import sys
 import time
 import traceback
 
+import requests
+import urllib3
 from bs4 import BeautifulSoup
 from random import uniform
 from lib.check_code import Checkcode
@@ -136,6 +139,11 @@ if __name__ == "__main__":
             time.sleep(random_sleep)
         except KeyboardInterrupt:
             sys.exit()
+        except requests.exceptions.SSLError or ssl.SSLEOFError or urllib3.exceptions.MaxRetryError:
+            print('!!!!!! error here !!!!!!')
+            traceback.print_exc()
+            login(s)
+            continue
         else:
             traceback.print_exc()
             login(s)
