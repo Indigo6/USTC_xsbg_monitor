@@ -6,45 +6,18 @@ import traceback
 
 from bs4 import BeautifulSoup
 from random import uniform
-from lib.check_code import Checkcode
+from lib.login import login_platform
 from lib.mail import send_email
 from lib.session import MySession
 from lib.utils import create_logger, parse_args
+from lib.urls import *
 
-login_asp = "https://yjs.ustc.edu.cn/default_yjsy.asp"
-check_code_asp = 'https://yjs.ustc.edu.cn/checkcode.asp'
-
-speech_asp = "http://yjs.ustc.edu.cn/bgzy/m_bgxk.asp"
-speech_global_asp = "https://yjs.ustc.edu.cn/bgzy/m_bgxk_up.asp"
-speech_private_asp = "https://yjs.ustc.edu.cn/bgzy/m_bgxk_down.asp"
-page_suffix = "?querytype=kc&amp;page=2"
 
 default_headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                   'Chrome/77.0.3865.75 Safari/537.36',
     "Host": "yjs.ustc.edu.cn"
 }
-
-
-def login(s):
-    # get check code
-    login_txt = s.get(login_asp).text
-    img = s.get(check_code_asp).content
-    with open('check_code.png', 'wb') as f:
-        f.write(img)
-    check_code = Checkcode()
-    print("check code: " + check_code)
-
-    # login
-    login_dict = {
-        'userid': userid,
-        'userpwd': userpwd,
-        'txt_check': check_code
-    }
-    login_result = s.post(login_asp, data=login_dict)
-    login_status_code = login_result.status_code
-    if login_status_code == 200:
-        print("Login succeed!")
 
 
 def check_selected(tried_speech_name):
@@ -82,7 +55,7 @@ if __name__ == "__main__":
     logger.info("Logging in...")
     s = MySession()
     s.headers.update(default_headers)
-    login(s)
+    login_platform(s, yjs_login_asp, yjs_check_code_asp, userid, userpwd)
 
     while True:
         try:
@@ -129,6 +102,9 @@ if __name__ == "__main__":
                 select_form = {"selectxh": str(global_speech.contents[3].contents[0]),
                                "select": "true"}
                 select_response = s.post(speech_global_asp, select_form).status_code
+                unselect_form = {"xuhao": str(global_speech.contents[3].contents[0]),
+                                 "tuixuan": "true"}
+                unselect_response = s.post(speech_private_asp, unselect_form).status_code
                 if select_response == 200 and check_selected(global_speech_name):
                     send_email("*** O(∩_∩)O~~ 选上报告: {} ***!".format(global_speech_name), mail_server, mail_address, mail_passwd)
             random_sleep = uniform(120, 180)
@@ -137,5 +113,5 @@ if __name__ == "__main__":
             sys.exit()
         else:
             traceback.print_exc()
-            login(s)
+            login_platform(s, yjs_login_asp, yjs_check_code_asp, userid, userpwd)
             continue
