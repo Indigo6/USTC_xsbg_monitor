@@ -62,7 +62,7 @@ def universal_check_code():
 
     check_code = ''
     # now start to find the right digit
-    img_dat = cv.imread('digit_imgs/universal/check_code.png')
+    img_dat = cv.imread('check_code.png')
     for i in range(4):
         # get next digit in the image
         data = img_dat[1:-1, splits[i]: splits[i + 1], :]
