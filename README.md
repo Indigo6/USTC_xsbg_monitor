@@ -6,4 +6,4 @@
 3. 运行 `main.py，也可以 'python main.py --cfg YOUR_JSON_PATH' 置顶配置路径
 
 ## TODO
- - [ ] 支持 “统一身份登录” 登录方式
+ - [x] 支持 “统一身份登录” 登录方式
