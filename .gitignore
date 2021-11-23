@@ -74,4 +74,5 @@ target/
 cfg/mine.json
 log
 check_code.png
+test.py
 
