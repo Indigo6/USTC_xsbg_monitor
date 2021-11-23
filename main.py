@@ -2,6 +2,7 @@
 import json
 import sys
 import time
+import datetime
 import traceback
 
 from bs4 import BeautifulSoup
@@ -35,6 +36,26 @@ def check_selected(tried_speech_name):
     return False
 
 
+def speech_filter(speech, selected_names):
+    speech_name = speech.contents[5].contents[1].contents[0].strip()
+    speech_time = speech.contents[15].contents[0]
+    speech_year = int(speech_time.split('年')[0])
+    speech_month = int(speech_time.split('年')[1].split('月')[0])
+    speech_day = int(speech_time.split('年')[1].split('月')[1].split('日')[0])
+    now = datetime.datetime.now()
+    if speech_name in selected_names:
+        logger.info("无需选课(已选): " + speech_name)
+    elif "计算机学院研究生学术论坛系列" not in speech_name \
+            and "研究生高水平学术报告系列" not in speech_name:
+        logger.info("无需选课(无学分): " + speech_name)
+    elif speech_year < now.year or speech_month < now.month or speech_day < now.day:
+        logger.info("无需选课(已过期): " + speech_name)
+        return "end"    # reach date end of valid speeches
+    else:
+        return "need"    # need selection
+    return "no need"
+
+
 if __name__ == "__main__":
     args = parse_args()
     logger = create_logger('log/speech.log')
@@ -59,11 +80,6 @@ if __name__ == "__main__":
 
     while True:
         try:
-            # get speech table
-            speech_global_table = s.get(speech_global_asp)
-            global_soup = BeautifulSoup(speech_global_table.text, 'lxml')
-            global_speeches = global_soup.find_all('tr', class_="bt06")
-
             speech_private_table = s.get(speech_private_asp)
             private_soup = BeautifulSoup(speech_private_table.text, 'lxml')
             private_speeches = private_soup.find_all('tr', class_="bt06")
@@ -87,26 +103,39 @@ if __name__ == "__main__":
                     doing_num += 1
             logger.info("已选 {} 次学术报告, {} 次通过, {} 次未批改, {} 次不通过".format(len(private_names),
                                                                        succeed_num, doing_num, failed_num))
+            # if succeed_num >= 15:
+            #     logger.info("\n\n!!!!!!已选满 15 次学术报告, 可以去申请获得学分, 别搁着玩了!!!!!!")
+            #     sys.exit()
 
-            for global_speech in global_speeches:
-                global_speech_name = global_speech.contents[5].contents[1].contents[0].strip()
-                if global_speech_name in private_names:
-                    logger.info("无需选课(已选): " + global_speech_name)
-                    continue
-                elif "计算机学院研究生学术论坛系列" not in global_speech_name:
-                    logger.info("无需选课(无学分): " + global_speech_name)
-                    continue
-                logger.info("!*** 需要选课: {} ***!".format(global_speech_name))
-                send_email("!*** 需要选课: {} ***!".format(global_speech_name), mail_server, mail_address, mail_passwd)
+            # get speech table
+            for page_idx in range(1, 3):
+                speech_global_url = speech_global_asp.format(page_idx)
+                speech_global_table = s.get(speech_global_url)
+                global_soup = BeautifulSoup(speech_global_table.text, 'lxml')
+                global_speeches = global_soup.find_all('tr', class_="bt06")
+                filter_result = 0
+                for global_speech in global_speeches:
+                    global_speech_name = global_speech.contents[5].contents[1].contents[0].strip()
+                    filter_result = speech_filter(global_speech, private_names)
+                    if filter_result == "no need":      # no need for selection
+                        continue
+                    elif filter_result == "end":    # reach date end of valid speeches
+                        break
+                    logger.info("!*** 需要选课: {} ***!".format(global_speech_name))
+                    send_email("!*** 需要选课: {} ***!".format(global_speech_name),
+                               mail_server, mail_address, mail_passwd)
 
-                select_form = {"selectxh": str(global_speech.contents[3].contents[0]),
-                               "select": "true"}
-                select_response = s.post(speech_global_asp, select_form).status_code
-                unselect_form = {"xuhao": str(global_speech.contents[3].contents[0]),
-                                 "tuixuan": "true"}
-                unselect_response = s.post(speech_private_asp, unselect_form).status_code
-                if select_response == 200 and check_selected(global_speech_name):
-                    send_email("*** O(∩_∩)O~~ 选上报告: {} ***!".format(global_speech_name), mail_server, mail_address, mail_passwd)
+                    select_form = {"selectxh": str(global_speech.contents[3].contents[0]),
+                                   "select": "true"}
+                    select_response = s.post(speech_global_asp, select_form).status_code
+                    # unselect_form = {"xuhao": str(global_speech.contents[3].contents[0]),
+                    #                  "tuixuan": "true"}
+                    # unselect_response = s.post(speech_private_asp, unselect_form).status_code
+                    if select_response == 200 and check_selected(global_speech_name):
+                        send_email("*** O(∩_∩)O~~ 选上报告: {} ***!".format(global_speech_name),
+                                   mail_server, mail_address, mail_passwd)
+                if filter_result == 2:  # reach date end of valid speeches
+                    break
             random_sleep = uniform(120, 180)
             time.sleep(random_sleep)
         except KeyboardInterrupt:
