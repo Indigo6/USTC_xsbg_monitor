@@ -1,6 +1,4 @@
-from __future__ import absolute_import
-
-from check_code import platform_check_code, universal_check_code
+from .check_code import platform_check_code, universal_check_code
 
 
 def login_platform(s, login_site, check_code_site, user_id, user_pwd):

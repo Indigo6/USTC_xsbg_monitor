@@ -1,10 +1,8 @@
-from __future__ import absolute_import
-
 import imageio
 import cv2 as cv
 import numpy as np
 
-from session import MySession
+from .session import MySession
 
 '''
 # extract the digit from check code
@@ -26,7 +24,7 @@ def platform_check_code():
     # get the digit from digit_images folder
     digit = []
     for i in range(10):
-        img_dat = imageio.imread('digit_imgs/paltform/' + str(i) + '.png')
+        img_dat = imageio.imread('digit_imgs/platform/' + str(i) + '.png')
         digit.append(img_dat)
 
     check_code = ''
