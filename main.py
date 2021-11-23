@@ -45,13 +45,14 @@ def speech_filter(speech, selected_names):
     speech_year = int(speech_time.split('年')[0])
     speech_month = int(speech_time.split('年')[1].split('月')[0])
     speech_day = int(speech_time.split('年')[1].split('月')[1].split('日')[0])
+    speech_datetime = datetime.datetime(speech_year, speech_month, speech_day)
     now = datetime.datetime.now()
     if speech_name in selected_names:
         logger.info("无需选课(已选): " + speech_name)
     elif "计算机学院研究生学术论坛系列" not in speech_name \
             and "研究生高水平学术报告系列" not in speech_name:
         logger.info("无需选课(无学分): " + speech_name)
-    elif speech_year < now.year or speech_month < now.month or speech_day < now.day:
+    elif speech_datetime < now:
         logger.info("无需选课(已过期): " + speech_name)
         return "end"    # reach date end of valid speeches
     else:
