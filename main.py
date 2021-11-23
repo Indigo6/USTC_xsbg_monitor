@@ -1,10 +1,13 @@
 # encoding: utf-8
 import json
+import ssl
 import sys
 import time
 import datetime
 import traceback
 
+import requests
+import urllib3
 from bs4 import BeautifulSoup
 from random import uniform
 from lib.login import login_platform
@@ -103,9 +106,9 @@ if __name__ == "__main__":
                     doing_num += 1
             logger.info("已选 {} 次学术报告, {} 次通过, {} 次未批改, {} 次不通过".format(len(private_names),
                                                                        succeed_num, doing_num, failed_num))
-            # if succeed_num >= 15:
-            #     logger.info("\n\n!!!!!!已选满 15 次学术报告, 可以去申请获得学分, 别搁着玩了!!!!!!")
-            #     sys.exit()
+            if succeed_num >= 15:
+                logger.info("\n\n!!!!!!已选满 15 次学术报告, 可以去申请获得学分, 别搁着玩了!!!!!!")
+                sys.exit()
 
             # get speech table
             for page_idx in range(1, 3):
@@ -140,6 +143,10 @@ if __name__ == "__main__":
             time.sleep(random_sleep)
         except KeyboardInterrupt:
             sys.exit()
+        except requests.exceptions.SSLError or ssl.SSLEOFError or urllib3.exceptions.MaxRetryError:
+            traceback.print_exc()
+            login_platform(s, yjs_login_asp, yjs_check_code_asp, userid, userpwd)
+            continue
         else:
             traceback.print_exc()
             login_platform(s, yjs_login_asp, yjs_check_code_asp, userid, userpwd)
