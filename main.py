@@ -134,7 +134,7 @@ if __name__ == "__main__":
                     if select_response == 200 and check_selected(global_speech_name):
                         send_email("*** O(∩_∩)O~~ 选上报告: {} ***!".format(global_speech_name),
                                    mail_server, mail_address, mail_passwd)
-                if filter_result == 2:  # reach date end of valid speeches
+                if filter_result == "end":  # reach date end of valid speeches
                     break
             random_sleep = uniform(120, 180)
             time.sleep(random_sleep)
